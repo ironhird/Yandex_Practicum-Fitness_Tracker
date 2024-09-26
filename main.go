@@ -2,10 +2,11 @@ package main
 
 // импортируйте нужные пакеты
 import (
-    //"fmt"
-	"time"
+	//"fmt"
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -77,12 +78,17 @@ func calories(distance float64) float64 {
 // achievement возвращает мотивирующее сообщение в зависимости от
 // пройденного расстояния в километрах
 func achievement(distance float64) string {
-    // ...
+	switch {
+	case distance >= 6.5: return "Отличный результат! Цель достигнута."
+	case distance >= 3.9: return "Неплохо! День был продуктивный."
+	case distance >= 2.0: return "Завтра наверстаем!"
+	default: return "Лежать тоже полезно. Главное — участие, а не победа!"
+	}
 }
 
 // showMessage выводит строку и добавляет два переноса строк
 func showMessage(s string) {
-    // ...
+    fmt.Printf("%s\n\n", s)
 }
 
 // AcceptPackage обрабатывает входящий пакет, который передаётся в
@@ -92,28 +98,52 @@ func showMessage(s string) {
 // Если пакет валидный, он добавляется в слайс storage, который возвращает
 // функция. Если пакет невалидный, storage возвращается без изменений.
 func AcceptPackage(data string, storage []string) []string {
+    
     // 1. Используйте parsePackage для разбора пакета
-    //    t, steps, ok := parsePackage(data)
+    t, steps, ok := parsePackage(data)	
+
     //    выведите сообщение в случае ошибки
+	if !ok {
+		showMessage(`ошибочный формат пакета`)
+        return storage
+	}
+
     //    также проверьте количество шагов на равенство нулю
-    // ...
+    if steps == 0 {
+		return storage
+	}
 
     // 2. Получите текущее UTC-время и сравните дни 
     //    выведите сообщение, если день в пакете t.Day() не совпадает 
     //    с текущим днём
-    // ...
+    now := time.Now().UTC()
+    if t.Day() != now.Day() {
+        showMessage(`неверный день`)
+        return storage
+    }
 
     // выводим ошибку, если время в пакете больше текущего времени
     if t.After(now) {
         showMessage(`некорректное значение времени`)
         return storage
     }
+
     // проверки для непустого storage
     if len(storage) > 0 {
         // 3. Достаточно сравнить первые len(Format) символов пакета с
         //    len(Format) символами последней записи storage
         //    если меньше или равно, то ошибка — некорректное значение времени
-        // ...
+        
+        // последний элемент слайса storage
+        lastPackage := storage[len(storage)-1]
+        // время последнего пакета данных
+        lastDateTime, _ := time.Parse(Format, lastPackage[:len(Format)])
+        // время нового поступившего пакета данных
+        dataDateTime, err := time.Parse(Format, data)
+        if lastDateTime.After(dataDateTime) || err != nil {
+            showMessage(`некорректное значение времени`)
+            return storage
+        }
 
         // смотрим, наступили ли новые сутки: YYYYMMDD — 8 символов 
         if data[:8] != storage[len(storage)-1][:8] {
@@ -122,16 +152,36 @@ func AcceptPackage(data string, storage []string) []string {
             storage = storage[:0]
         }
     }
+
     // остаётся совсем немного
     // 5. Добавить пакет в storage
-    // 6. Получить общее количество шагов
-    // 7. Вычислить общее расстояние (в метрах)
-    // 8. Получить потраченные килокалории
-    // 9. Получить мотивирующий текст
-    // 10. Сформировать и вывести полный текст сообщения
-    // 11. Вернуть storage
-    // ...
+    storage = append(storage, data)
 
+    // 6. Получить общее количество шагов
+    totalDaySteps := stepsDay(storage)
+
+    // 7. Вычислить общее расстояние (в метрах)
+    totalDayMeters := float64(totalDaySteps) * StepLength
+    totalDayKilometer := totalDayMeters / 1000
+
+    // 8. Получить потраченные килокалории
+    totalDayCalories := calories(totalDayMeters)
+
+    // 9. Получить мотивирующий текст
+    achievementText := achievement(totalDayKilometer)
+
+    // 10. Сформировать и вывести полный текст сообщения
+    /*
+Время: <время из полученного пакета данных>.
+Количество шагов за сегодня: <сумма шагов, сделанных с начала текущих суток>.
+Дистанция составила <сумма шагов с начала текущих суток, конвертированная в км> км.
+Вы сожгли <количество килокалорий, истраченных с начала текущих суток> ккал.
+<Мотивирующее сообщение в зависимости от результатов>
+    */
+    message := fmt.Sprintf("Время: %s.\nКоличество шагов за сегодня: %d.\nДистанция составила %f км.\nВы сожгли %f ккал.\n%s\n", t.Format("15:04:05"), totalDaySteps, totalDayKilometer, totalDayCalories, achievementText)
+    showMessage(message)
+
+    // 11. Вернуть storage
     return storage
 }
 
