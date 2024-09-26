@@ -139,8 +139,8 @@ func AcceptPackage(data string, storage []string) []string {
         // время последнего пакета данных
         lastDateTime, _ := time.Parse(Format, lastPackage[:len(Format)])
         // время нового поступившего пакета данных
-        dataDateTime, err := time.Parse(Format, data)
-        if lastDateTime.After(dataDateTime) || err != nil {
+        dataDateTime, err := time.Parse(Format, data[:len(Format)])
+        if !dataDateTime.After(lastDateTime) || err != nil {
             showMessage(`некорректное значение времени`)
             return storage
         }
@@ -178,7 +178,11 @@ func AcceptPackage(data string, storage []string) []string {
 Вы сожгли <количество килокалорий, истраченных с начала текущих суток> ккал.
 <Мотивирующее сообщение в зависимости от результатов>
     */
-    message := fmt.Sprintf("Время: %s.\nКоличество шагов за сегодня: %d.\nДистанция составила %f км.\nВы сожгли %f ккал.\n%s\n", t.Format("15:04:05"), totalDaySteps, totalDayKilometer, totalDayCalories, achievementText)
+    message := fmt.Sprintf(`Время: %s.
+Количество шагов за сегодня: %d.
+Дистанция составила %.2f км.
+Вы сожгли %.2f ккал.
+%s`, t.Format("15:04:05"), totalDaySteps, totalDayKilometer, totalDayCalories, achievementText)
     showMessage(message)
 
     // 11. Вернуть storage
