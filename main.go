@@ -2,7 +2,10 @@ package main
 
 // импортируйте нужные пакеты
 import (
-    // ...
+    //"fmt"
+	"time"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -26,7 +29,10 @@ var (
 func parsePackage(data string) (t time.Time, steps int, ok bool) {
     // 1. Разделите строку на две части по запятой в слайс ds
     // 2. Проверьте, чтобы ds состоял из двух элементов
-    // ...
+	ds := strings.Split(data, ",")
+	if len(ds) != 2 {
+		return
+	}	
     var err error
     // получаем время time.Time
     t, err = time.Parse(Format, ds[0])
@@ -48,13 +54,24 @@ func parsePackage(data string) (t time.Time, steps int, ok bool) {
 func stepsDay(storage []string) int {
     // тема оптимизации не затрагивается, поэтому можно 
     // использовать parsePackage для каждого элемента списка
-    // ...
+	var daySteps int = 0
+    for _, onePackage := range storage {
+		_, pkgSteps, _ := parsePackage(onePackage)
+		daySteps += pkgSteps		
+	}
+	return daySteps
 }
 
 // calories возвращает количество килокалорий, которые потрачены на
 // прохождение указанной дистанции (в метрах) со скоростью 5 км/ч
 func calories(distance float64) float64 {
-    // ...
+	// вычисляем на основе констант энергозатраты по формуле 
+	// (ккал/мин) = 0,035 * m + (v*v/h) * 0,029 * m 
+    caloriesInMin := K1 * Weight + (Speed * Speed / Height) * K2 * Weight
+	// делим дистанцию (в метрах) на скорость 1.39 м/c 
+	// и делим на 60 секунд для получения минут на дистанции
+	distanceMinutes := (distance / 1.39) / 60
+	return distanceMinutes * caloriesInMin
 }
 
 // achievement возвращает мотивирующее сообщение в зависимости от
